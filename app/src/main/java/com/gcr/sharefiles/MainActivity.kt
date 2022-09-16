@@ -10,6 +10,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.Toast
 import com.gcr.sharefiles.databinding.ActivityMainBinding
 import java.io.File
 import java.io.IOException
@@ -19,6 +20,7 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
 
     val REQUEST_IMAGE_CAPTURE = 1
+    var imageCaptured = false
     lateinit var currentPhotoPath: String
     lateinit var binding: ActivityMainBinding
 
@@ -31,6 +33,15 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnTakePhoto.setOnClickListener {
             dispatchTakePictureIntent()
+        }
+
+        binding.btnSaveAndShare.setOnClickListener {
+            if (imageCaptured){
+                createImageFile()
+                reset()
+            }else{
+                Toast.makeText(this,"No image",Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -46,6 +57,7 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             val imageBitmap = data?.extras?.get("data") as Bitmap
+            imageCaptured = true
             binding.imageView.setImageBitmap(imageBitmap)
         }
     }
@@ -64,5 +76,11 @@ class MainActivity : AppCompatActivity() {
             // Save a file: path for use with ACTION_VIEW intents
             currentPhotoPath = absolutePath
         }
+        Toast.makeText(this,"image saved success",Toast.LENGTH_SHORT).show()
+    }
+
+    private fun reset(){
+        imageCaptured = false
+        binding.imageView.setImageBitmap(null)
     }
 }
