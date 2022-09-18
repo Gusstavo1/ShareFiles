@@ -1,8 +1,12 @@
 package com.gcr.sharefiles
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Environment
@@ -11,6 +15,11 @@ import android.util.Log
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContentProviderCompat.requireContext
+import androidx.core.content.ContextCompat
 import com.gcr.sharefiles.databinding.ActivityMainBinding
 import java.io.File
 import java.io.IOException
@@ -21,6 +30,7 @@ class MainActivity : AppCompatActivity() {
 
     val REQUEST_IMAGE_CAPTURE = 1
     var imageCaptured = false
+    var status =  false
     lateinit var currentPhotoPath: String
     lateinit var binding: ActivityMainBinding
 
@@ -30,9 +40,13 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         val view = binding.root
         setContentView(view)
+        requestPermissions()
 
         binding.btnTakePhoto.setOnClickListener {
-            dispatchTakePictureIntent()
+            if(PackageManager.PERMISSION_GRANTED == 0)
+                dispatchTakePictureIntent()
+            else
+                Toast.makeText(this,"Denegado",Toast.LENGTH_SHORT).show()
         }
 
         binding.btnSaveAndShare.setOnClickListener {
@@ -77,6 +91,47 @@ class MainActivity : AppCompatActivity() {
             currentPhotoPath = absolutePath
         }
         Toast.makeText(this,"image saved success",Toast.LENGTH_SHORT).show()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun checkPermissions(context: Context){
+        if(ActivityCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED){
+            Log.d("TAG","No hay permisos ... solicitalos")
+            requestPermissions(arrayOf(Manifest.permission.CAMERA), 100)
+        }else{
+            Log.d("TAG","Ya tiene hay permisos ...")
+        }
+    }
+
+    private fun requestPermissions(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            when (PackageManager.PERMISSION_GRANTED) {
+                ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) -> {
+                    Toast.makeText(this,"Ya había Otorgado",Toast.LENGTH_SHORT).show()
+                    //dispatchTakePictureIntent()
+                }
+                else -> {
+                    requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                }
+            }
+        }
+    }
+
+    /**
+     * Revisar la documentación para solicitud de permisos
+     * https://developer.android.com/training/permissions/requesting#manage-request-code-yourself
+     * https://www.youtube.com/watch?v=MVhjLo8bDac
+     */
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()){
+        isGranted: Boolean ->
+        if(isGranted){
+            // Permission is granted. Continue the action or workflow in your
+            // app.
+            Toast.makeText(this,"Otorgado",Toast.LENGTH_SHORT).show()
+        }else{
+            Toast.makeText(this,"Denegado",Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun reset(){
